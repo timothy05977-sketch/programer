@@ -28,7 +28,8 @@ def load() -> dict:
     if _CONFIG_FILE.exists():
         cfg.update(json.loads(_CONFIG_FILE.read_text()))
     for key in ("RAINFOREST_API_KEY", "FEISHU_DOC_TOKEN", "FEISHU_BITABLE_TOKEN",
-                "FEISHU_BITABLE_TABLE_ID"):
+                "FEISHU_BITABLE_TABLE_ID_PRODUCTS",
+                "FEISHU_BITABLE_TABLE_ID_SNAPSHOTS"):
         val = os.environ.get(key)
         if val:
             cfg[key.lower()] = val

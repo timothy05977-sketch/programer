@@ -9,14 +9,19 @@ sys.path.insert(0, str(Path(__file__).parents[3]))
 from shared import config as cfg
 
 
+_CONFIG_KEYS = (
+    "amazon_marketplace",
+    "rainforest_api_key",
+    "feishu_doc_token",
+    "feishu_bitable_token",
+    "feishu_bitable_table_id_products",
+    "feishu_bitable_table_id_snapshots",
+)
+
+
 def save(args):
-    updates = {}
-    for key in ("amazon_marketplace", "rainforest_api_key",
-                "feishu_doc_token", "feishu_bitable_token",
-                "feishu_bitable_table_id"):
-        val = getattr(args, key, None)
-        if val:
-            updates[key] = val
+    updates = {k: v for k in _CONFIG_KEYS
+               if (v := getattr(args, k, None))}
     cfg.save(updates)
     print(json.dumps({"status": "ok", "saved": list(updates.keys())}))
 
@@ -46,8 +51,11 @@ def test_rainforest():
 
 def check():
     conf = cfg.load()
-    missing = [k for k in ("amazon_marketplace", "feishu_doc_token")
-               if not conf.get(k)]
+    required = ("amazon_marketplace", "feishu_doc_token",
+                "feishu_bitable_token",
+                "feishu_bitable_table_id_products",
+                "feishu_bitable_table_id_snapshots")
+    missing = [k for k in required if not conf.get(k)]
     print(json.dumps({
         "initialized": len(missing) == 0,
         "missing": missing,
@@ -61,8 +69,7 @@ if __name__ == "__main__":
     sub = parser.add_subparsers(dest="cmd")
 
     p_save = sub.add_parser("save")
-    for k in ("amazon_marketplace", "rainforest_api_key", "feishu_doc_token",
-              "feishu_bitable_token", "feishu_bitable_table_id"):
+    for k in _CONFIG_KEYS:
         p_save.add_argument(f"--{k.replace('_', '-')}", dest=k)
 
     sub.add_parser("test-rainforest")
