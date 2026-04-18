@@ -1,6 +1,6 @@
 ---
 name: monitor
-description: Run the Amazon product monitoring cycle. Triggered automatically every 20 minutes by the scheduler, or manually when the user says "刷新/refresh/立即检查/手动触发". Executes the full fixed chain: fetch product snapshots → analyze trends → send Feishu report card → append to Feishu document. Do NOT use this skill for user queries, product management, or report generation — those go to the agent skill.
+description: Run the Amazon product monitoring cycle. Triggered automatically every 20 minutes by the scheduler, or manually when the user says "刷新/refresh/立即检查/手动触发". Executes the full fixed chain: fetch product snapshots → analyze trends → send Feishu report card → append to Feishu document → write snapshots to Bitable. Do NOT use this skill for user queries, product management, or report generation — those go to the agent skill.
 ---
 
 # Monitor
@@ -9,42 +9,61 @@ description: Run the Amazon product monitoring cycle. Triggered automatically ev
 
 ## 前置检查
 
-启动前确认配置完整（调用 `scripts/data_provider.py` 前先检查）：
+启动前确认配置完整：
 - `amazon_marketplace` 已设置
 - `feishu_doc_token` 已设置
-- 监控商品列表不为空（SQLite products 表）
+- Bitable 监控商品表不为空（`feishu_bitable_token` + `feishu_bitable_table_id` 已配置）
 
 任一缺失 → 停止本轮，通过飞书插件发送提示消息，触发 agent skill 完成配置。
 
-## Step 1 — 数据采集
+## Step 1 — 读取监控商品列表
+
+使用飞书插件「多维表格-查询记录」工具，从 **products 表**（`feishu_bitable_table_id_products`）读取所有状态为 active 的商品，获取 ASIN 列表和商品名称。
+
+## Step 2 — 数据采集
 
 ```bash
 python scripts/data_provider.py fetch --asin <ASIN1> [--asin <ASIN2> ...]
 ```
 
-从 SQLite `products` 表读取所有 ASIN，批量传入。
 - 优先 Rainforest API；失败时自动降级直接爬取
-- 结果写入 SQLite `snapshots` 表
-- 输出 JSON 摘要，包含 `summary.failed` 和 `summary.scraper_fallback`
+- **只输出 JSON，不写 DB**
+- 输出：`{"results":[{"asin","status","source","snapshot":{...}}], "summary":{total,ok,failed[],scraper_fallback[]}}`
 
-## Step 2 — 趋势分析
+## Step 3 — 读取历史快照
 
-```bash
-python scripts/analyze.py --all
+对 Step 2 中采集成功的每个 ASIN，使用飞书插件「多维表格-查询记录」工具，从 **snapshots 表**（`feishu_bitable_table_id_snapshots`）按时间倒序读取最近 20 条记录，构造 stdin JSON：
+
+```json
+{
+  "products": [
+    {
+      "asin": "B0CHWX8DFH",
+      "title": "...",
+      "history": [
+        {"sales_rank": 18, "price_value": 24.99, "price": "$24.99",
+         "fetched_at": "2026-04-18T14:20:00", "data_source": "rainforest"},
+        ...
+      ]
+    }
+  ]
+}
 ```
 
-基于 SQLite 最近快照计算：
-- 每个商品的排名/价格变化和趋势标签
-- 焦点商品（`abs(rank_delta)` 最大）
-- 告警列表（`abs(rank_delta) > alert_threshold`，默认 3）
+history 顺序：newest → oldest
+
+## Step 4 — 趋势分析
+
+```bash
+echo '<stdin json>' | python scripts/analyze.py --all
+```
 
 输出 JSON：`{ cycle_time, focus, products[], alerts[] }`
 
-## Step 3 — 飞书汇报卡片
+## Step 5 — 飞书汇报卡片
 
 使用 OpenClaw 飞书插件「发送消息」工具，发送蓝色主题汇报卡片：
 
-**卡片结构：**
 ```
 🔍 Amazon 监控报告 · {YYYY-MM-DD HH:mm}
 ─────────────────────────
@@ -63,9 +82,9 @@ python scripts/analyze.py --all
 - `[查看文档]` → URL 跳转：`https://xxx.feishu.cn/docx/{feishu_doc_token}`
 - `[管理商品]` → callback action: `manage_products`
 
-**若 Step 1 有降级：** 卡片底部追加灰色小字「⚠ 数据来源包含直接爬取，仅供参考」
+若 Step 2 有降级：卡片底部追加灰色小字「⚠ 数据来源包含直接爬取，仅供参考」
 
-## Step 4 — 告警卡片（条件触发）
+## Step 6 — 告警卡片（条件触发）
 
 对 `alerts[]` 中每个商品**单独**发送红色主题告警卡片：
 
@@ -79,7 +98,7 @@ python scripts/analyze.py --all
 
 同一商品同方向连续 2 次告警：末尾追加「⚠ 持续变化中」
 
-## Step 5 — 追加飞书文档
+## Step 7 — 追加飞书文档
 
 使用 OpenClaw 飞书插件「更新云文档」工具，在文档末尾追加：
 
@@ -89,17 +108,17 @@ python scripts/analyze.py --all
 本轮焦点：{focus.title}，排名 {delta 描述}。{summary}
 ```
 
-## Step 6 — 写入多维表格
+## Step 8 — 写入 Bitable 快照表
 
-使用飞书插件「多维表格-创建记录」工具，每个商品写入一条记录：
+使用飞书插件「多维表格-创建记录」工具，每个采集成功的商品写入一条记录到 **snapshots 表**：
 
 | 字段 | 值 |
 |------|----|
 | ASIN | 商品 ASIN |
 | 商品名 | title（截断 50 字）|
-| 记录时间 | 毫秒时间戳（UTC+8）|
+| 记录时间 | ISO 8601 字符串（fetched_at）|
 | 当前排名 | sales_rank（整数）|
-| 排名变化 | rank_delta（正=提升）|
+| 排名变化 | rank_delta（正=提升，来自 analyze 输出）|
 | 当前价格 | price_value（浮点）|
 | 趋势标签 | label（📈/📉/➡/⚠/—）|
 | 数据来源 | rainforest / scraper |

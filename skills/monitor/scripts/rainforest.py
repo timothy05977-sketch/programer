@@ -7,7 +7,7 @@ import requests
 
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from shared import config as cfg
-from shared.db import Snapshot
+from shared.models import Snapshot
 from datetime import datetime
 
 BASE_URL = "https://api.rainforestapi.com/request"

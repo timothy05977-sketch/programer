@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Trend analysis: compute rank/price changes, assign labels, identify focus product."""
+"""Trend analysis — pure computation, no DB access.
+
+Input via stdin JSON:
+  --all : {"products": [{"asin":"..","title":"..","history":[<snapshot>,..]}, ...]}
+  --asin: {"asin":"..","title":"..","history":[<snapshot>,...]}
+
+Snapshot keys: sales_rank(int|null), price_value(float|null), price(str),
+               fetched_at(ISO str), data_source(str)
+History ordered newest → oldest.
+"""
 from __future__ import annotations
 import argparse
 import json
@@ -8,123 +17,112 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[3]))
-from shared import config as cfg, db
+from shared import config as cfg
 
-THRESHOLD = cfg.get("alert_threshold", 3)
+THRESHOLD = int(cfg.get("alert_threshold", 3))
 
 
-def _label(deltas: list[int]) -> str:
-    if len(deltas) < 2:
+def _label(rank_deltas: list[int]) -> str:
+    if len(rank_deltas) < 2:
         return "— 数据不足"
-    recent = deltas[:2]
-    last_delta = deltas[0]
-    if abs(last_delta) > THRESHOLD:
+    last = rank_deltas[0]
+    if abs(last) > THRESHOLD:
         return "⚠ 异动"
-    rising = all(d > 0 for d in recent)
-    falling = all(d < 0 for d in recent)
-    if rising:
+    if all(d > 0 for d in rank_deltas[:2]):
         return "📈 上升"
-    if falling:
+    if all(d < 0 for d in rank_deltas[:2]):
         return "📉 下降"
     return "➡ 稳定"
 
 
-def _summary(asin: str, label: str, curr_rank, prev_rank, curr_price, prev_price) -> str:
+def _summary(label: str, curr_rank, prev_rank, curr_price, prev_price) -> str:
     if prev_rank is None or curr_rank is None:
-        return "首次快照，无对比基准。"
-    delta = prev_rank - curr_rank  # positive = rank improved (smaller number)
-    direction = "▲" if delta > 0 else "▼"
-    rank_desc = f"排名从 #{prev_rank} {'升' if delta > 0 else '降'}至 #{curr_rank}，{direction}{abs(delta)} 位。"
+        return f"首次快照，排名 #{curr_rank}，无历史对比基准。"
+    delta = prev_rank - curr_rank
+    up = delta > 0
+    rank_desc = f"排名从 #{prev_rank} {'升' if up else '降'}至 #{curr_rank}，{'▲' if up else '▼'}{abs(delta)} 位。"
     price_desc = ""
-    if prev_price and curr_price and prev_price != curr_price:
+    if prev_price and curr_price:
         try:
             pct = (curr_price - prev_price) / prev_price * 100
-            price_desc = f" 价格{'下降' if pct < 0 else '上升'} {abs(pct):.1f}%。"
+            if abs(pct) >= 0.5:
+                price_desc = f" 价格{'下降' if pct < 0 else '上升'} {abs(pct):.1f}%。"
         except Exception:
             pass
-    if label == "⚠ 异动":
-        note = "单次大幅跳升，建议持续关注。" if delta > 0 else "单次大幅下滑，建议关注原因。"
-    elif label == "📈 上升":
-        note = "连续上升趋势明显。"
-    elif label == "📉 下降":
-        note = "连续下降趋势，需关注竞争压力。"
-    else:
-        note = "数据稳定，无明显异动。"
-    return rank_desc + price_desc + " " + note
+    notes = {
+        "⚠ 异动":    "单次大幅跳升，建议持续关注。" if up else "单次大幅下滑，建议关注竞争压力。",
+        "📈 上升":    "连续上升趋势明显。",
+        "📉 下降":    "连续下降，需关注竞争变化。",
+        "➡ 稳定":    "数据稳定，无明显异动。",
+        "— 数据不足": "快照数据不足，趋势待积累。",
+    }
+    return rank_desc + price_desc + " " + notes.get(label, "")
 
 
-def analyze_asin(asin: str) -> dict:
-    history = db.get_recent_snapshots(asin, limit=6)
+def analyze_product(p: dict) -> dict:
+    asin    = p["asin"]
+    history = p.get("history", [])
+
     if not history:
-        return {"asin": asin, "status": "no_data"}
+        return {"asin": asin, "title": p.get("title", ""),
+                "label": "— 数据不足", "alert": False, "status": "no_data"}
 
-    curr = history[0]
-    prev = history[1] if len(history) > 1 else None
-
-    curr_rank = curr.get("sales_rank")
-    prev_rank = prev.get("sales_rank") if prev else None
+    curr       = history[0]
+    prev       = history[1] if len(history) > 1 else None
+    curr_rank  = curr.get("sales_rank")
+    prev_rank  = prev.get("sales_rank") if prev else None
     curr_price = curr.get("price_value")
     prev_price = prev.get("price_value") if prev else None
-
-    rank_delta = None
-    if curr_rank is not None and prev_rank is not None:
-        rank_delta = prev_rank - curr_rank  # positive = improved
+    rank_delta = (prev_rank - curr_rank) if (curr_rank and prev_rank) else None
 
     deltas = []
     for i in range(len(history) - 1):
-        a = history[i].get("sales_rank")
-        b = history[i + 1].get("sales_rank")
-        if a is not None and b is not None:
-            deltas.append(b - a)  # positive = rank got worse (larger number)
+        a, b = history[i].get("sales_rank"), history[i + 1].get("sales_rank")
+        if a and b:
+            deltas.append(b - a)
 
     label = _label(deltas)
     alert = rank_delta is not None and abs(rank_delta) > THRESHOLD
 
-    summary = _summary(asin, label, curr_rank, prev_rank, curr_price, prev_price)
-
     return {
-        "asin": asin,
-        "title": curr.get("title", "N/A"),
-        "rank_curr": curr_rank,
-        "rank_prev": prev_rank,
-        "rank_delta": rank_delta,
-        "price_curr": curr.get("price", "N/A"),
-        "price_prev": prev.get("price", "N/A") if prev else "N/A",
+        "asin":             asin,
+        "title":            p.get("title", curr.get("title", "")),
+        "rank_curr":        curr_rank,
+        "rank_prev":        prev_rank,
+        "rank_delta":       rank_delta,
+        "price_curr":       curr.get("price", "N/A"),
+        "price_prev":       prev.get("price", "N/A") if prev else "N/A",
         "price_value_curr": curr_price,
         "price_value_prev": prev_price,
-        "label": label,
-        "alert": alert,
-        "summary": summary,
-        "data_source": curr.get("data_source", "unknown"),
-        "fetched_at": curr.get("fetched_at"),
+        "label":            label,
+        "alert":            alert,
+        "summary":          _summary(label, curr_rank, prev_rank, curr_price, prev_price),
+        "data_source":      curr.get("data_source", "unknown"),
+        "fetched_at":       curr.get("fetched_at"),
     }
 
 
-def run_all() -> dict:
-    db.init()
-    products = db.list_products()
-    results = [analyze_asin(p.asin) for p in products]
-    valid = [r for r in results if r.get("rank_delta") is not None]
-
-    focus = max(valid, key=lambda r: abs(r["rank_delta"])) if valid else (results[0] if results else None)
-
+def run_all(products: list[dict]) -> dict:
+    results = [analyze_product(p) for p in products]
+    valid   = [r for r in results if r.get("rank_delta") is not None]
+    focus   = max(valid, key=lambda r: abs(r["rank_delta"])) if valid else (results[0] if results else None)
     return {
         "cycle_time": datetime.now(timezone.utc).isoformat(),
-        "focus": focus,
+        "focus":    focus,
         "products": results,
-        "alerts": [r for r in results if r.get("alert")],
+        "alerts":   [r for r in results if r.get("alert")],
     }
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     grp = parser.add_mutually_exclusive_group(required=True)
-    grp.add_argument("--all", action="store_true")
-    grp.add_argument("--asin")
+    grp.add_argument("--all",  action="store_true")
+    grp.add_argument("--asin", action="store_true")
     args = parser.parse_args()
 
+    data = json.load(sys.stdin)
     if args.all:
-        print(json.dumps(run_all(), ensure_ascii=False, default=str))
+        print(json.dumps(run_all(data["products"]), ensure_ascii=False, default=str))
     else:
-        db.init()
-        print(json.dumps(analyze_asin(args.asin), ensure_ascii=False, default=str))
+        print(json.dumps(analyze_product(data), ensure_ascii=False, default=str))

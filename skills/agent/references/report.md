@@ -6,16 +6,40 @@
 
 ## 执行流程
 
-### Step 1 — 聚合历史数据
+### Step 1 — 从 Bitable 读取历史快照
+
+使用飞书插件「多维表格-查询记录」从 snapshots 表查询：
+- filter: `记录时间 >= <7天前 或 30天前 的 ISO 8601>`
+- 按「ASIN」和「记录时间」排序
+
+同时从 products 表读取所有 active 商品的 ASIN 和商品名。
+
+构造 stdin JSON（snapshots 顺序任意，脚本自动排序）：
+
+```json
+{
+  "products": [
+    {
+      "asin": "B0CHWX8DFH",
+      "title": "...",
+      "snapshots": [
+        {"sales_rank": 18, "price_value": 24.99, "fetched_at": "2026-04-18T14:20:00"}
+      ]
+    }
+  ]
+}
+```
+
+### Step 2 — 聚合报告数据
 
 ```bash
-python scripts/weekly_report.py --days 7   # 周报
-python scripts/weekly_report.py --days 30  # 月报
+echo '<stdin json>' | python scripts/weekly_report.py --days 7   # 周报
+echo '<stdin json>' | python scripts/weekly_report.py --days 30  # 月报
 ```
 
 输出 JSON 包含每个商品的排名区间、价格区间、趋势判断。
 
-### Step 2 — 写入飞书文档
+### Step 3 — 写入飞书文档
 
 使用飞书插件「更新云文档」，在文档**顶部**（监控快照区块之前）写入报告区块：
 
@@ -40,7 +64,7 @@ python scripts/weekly_report.py --days 30  # 月报
 基于 {count} 条快照记录，时间范围 {start} ~ {end}
 ```
 
-### Step 3 — 发送摘要卡片
+### Step 4 — 发送摘要卡片
 
 使用飞书插件「发送消息」发送报告完成通知卡片：
 

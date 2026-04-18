@@ -30,14 +30,26 @@
 提示：打开飞书文档，URL 末段即为 Token。
 例：`https://xxx.feishu.cn/docx/AbCdEfGh` → Token 是 `AbCdEfGh`
 
-### Step 4 — 飞书多维表格
-依次收集：
-1. `feishu_bitable_token` — 多维表格应用 Token（与文档同一个飞书账号下）
-2. `feishu_bitable_table_id` — 数据表 ID（在多维表格 URL 中可找到）
+### Step 4 — 飞书多维表格（Bitable）
+说明：用于存储监控商品列表和历史快照，是系统的唯一数据库。
+
+1. 收集 `feishu_bitable_token` — 多维表格的 app_token
+   提示：打开多维表格，URL 格式为 `https://xxx.feishu.cn/base/<app_token>`
+
+2. **自动建表**：使用飞书插件「多维表格-创建数据表」工具分别创建两张表：
+   - **products 表**（字段：ASIN/文本、商品名/文本、状态/单选、添加时间/日期时间、备注/文本）
+   - **snapshots 表**（字段：ASIN/文本、商品名/文本、记录时间/日期时间、当前排名/数字、排名变化/数字、当前价格/数字、价格原文/文本、趋势标签/单选、数据来源/单选）
+
+   将创建返回的两个 table_id 存入配置：
+   - `feishu_bitable_table_id_products`
+   - `feishu_bitable_table_id_snapshots`
 
 ### Step 5 — 初始监控商品
 询问至少 1 个 ASIN（10 位大写字母数字），支持逗号分隔批量输入。
 或选择「暂时跳过，稍后添加」。
+
+有 ASIN 时：使用飞书插件「多维表格-创建记录」工具写入 products 表，
+字段 `状态 = active`、`添加时间 = 当前时间`。
 
 ## 完成后执行
 
@@ -47,7 +59,8 @@ python scripts/init_config.py save \
   --rainforest-api-key <KEY> \
   --feishu-doc-token <TOKEN> \
   --feishu-bitable-token <TOKEN> \
-  --feishu-bitable-table-id <ID>
+  --feishu-bitable-table-id-products <ID> \
+  --feishu-bitable-table-id-snapshots <ID>
 ```
 
 验证：

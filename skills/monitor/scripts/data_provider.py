@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Unified data provider: Rainforest API → scraper fallback."""
+"""Fetch Amazon product snapshots. Outputs JSON only — no DB writes.
+Agent persists results to Feishu Bitable via the OpenClaw plugin."""
 from __future__ import annotations
 import argparse
 import json
@@ -8,13 +9,29 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[3]))
-from shared import config as cfg, db
+from shared import config as cfg
 
 import rainforest
 import scraper
 
 
-def _fetch_product(asin: str) -> dict:
+def _snap_to_dict(snap) -> dict:
+    return {
+        "asin":          snap.asin,
+        "title":         snap.title,
+        "price":         snap.price,
+        "price_value":   snap.price_value,
+        "rating":        snap.rating,
+        "review_count":  snap.review_count,
+        "availability":  snap.availability,
+        "sales_rank":    snap.sales_rank,
+        "rank_category": snap.rank_category,
+        "data_source":   snap.data_source,
+        "fetched_at":    snap.fetched_at,
+    }
+
+
+def _fetch_one(asin: str) -> dict:
     key = cfg.get("rainforest_api_key")
     errors = []
 
@@ -22,18 +39,17 @@ def _fetch_product(asin: str) -> dict:
         for attempt in range(2):
             try:
                 snap = rainforest.get_product(asin)
-                db.save_snapshot(snap)
                 return {"asin": asin, "status": "ok", "source": "rainforest",
-                        "data": snap.__dict__}
+                        "snapshot": _snap_to_dict(snap)}
             except Exception as e:
-                errors.append(f"rainforest: {e}")
+                errors.append(f"rainforest[{attempt}]: {e}")
                 if "429" in str(e):
                     time.sleep(60)
 
     try:
         snap = scraper.get_product(asin)
-        db.save_snapshot(snap)
-        return {"asin": asin, "status": "ok", "source": "scraper", "data": snap.__dict__}
+        return {"asin": asin, "status": "ok", "source": "scraper",
+                "snapshot": _snap_to_dict(snap)}
     except Exception as e:
         errors.append(f"scraper: {e}")
 
@@ -41,18 +57,17 @@ def _fetch_product(asin: str) -> dict:
 
 
 def cmd_fetch(args):
-    db.init()
-    results = [_fetch_product(a) for a in args.asin]
+    results = [_fetch_one(a) for a in args.asin]
     failed = [r["asin"] for r in results if r["status"] == "failed"]
     scraper_used = [r["asin"] for r in results if r.get("source") == "scraper"]
     print(json.dumps({
         "results": results,
         "summary": {
             "total": len(results),
-            "ok": len([r for r in results if r["status"] == "ok"]),
+            "ok": sum(1 for r in results if r["status"] == "ok"),
             "failed": failed,
             "scraper_fallback": scraper_used,
-        }
+        },
     }, default=str))
 
 
