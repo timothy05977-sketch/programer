@@ -14,7 +14,7 @@ description: 亚马逊商品监控 Agent 的自动采集 Skill。每 20 分钟�
 - `feishu_doc_token` 已设置
 - Bitable 监控商品表不为空（`feishu_bitable_token` + `feishu_bitable_table_id` 已配置）
 
-任一缺失 → 停止本轮，通过飞书插件发送提示消息，触发 agent skill 完成配置。
+任一缺失 → 停止本轮，通过飞书插件发送提示消息，触发 amz-Agent 完成配置。
 
 ## Step 1 — 读取监控商品列表
 
