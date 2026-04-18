@@ -1,21 +1,33 @@
 ---
 name: agent
-description: Handle all user-initiated interactions with the Amazon Product Tracker. Use this skill when the user sends any message requesting: configuration or first-time setup (配置/初始化/setup), adding or removing monitored products (添加/删除/查看商品/ASIN), querying trends or prices (趋势/价格/排名/变化/走势/爆款榜单), generating reports (报告/周报/月报/汇总), or asking for help (/help/帮助/怎么用). Also handles Feishu card callback actions (manage_products, view_trend, show_help, reset_config). Do NOT use for the automated 20-minute monitoring cycle.
+description: Handle all user-initiated interactions with the Amazon Product Tracker. Triggers on the "/amz" slash command (with or without arguments) and on any natural-language message requesting: configuration or first-time setup (配置/初始化/setup), adding or removing monitored products (添加/删除/查看商品/ASIN), querying trends or prices (趋势/价格/排名/变化/走势/爆款榜单), generating reports (报告/周报/月报/汇总), or asking for help (/amz -help, /help, 帮助, 怎么用). Also handles Feishu card callback actions (manage_products, view_trend, show_help, reset_config). Do NOT use for the automated 20-minute monitoring cycle.
 ---
 
 # Agent
 
 处理所有用户发起的交互。根据意图加载对应参考文档，按其流程执行。
 
+## `/amz` 命令解析
+
+用户可通过 `/amz` 命令唤醒本 agent，按如下规则解析：
+
+| 输入形式 | 处理方式 |
+|---------|---------|
+| `/amz` | 唤醒 agent，若未初始化则触发配置引导；否则等待用户下一句意图 |
+| `/amz -help` | 直接跳到 `references/help.md`，发送帮助卡片 |
+| `/amz <任意文字>` | 剥去 `/amz` 前缀，将剩余文字按下方意图路由表处理 |
+
+`/amz` 只是入口唤醒词，剥离后的内容与直接发消息完全等价。
+
 ## 意图路由
 
 | 用户意图 | 参考文档 | 涉及脚本 |
 |---------|---------|---------|
+| `/amz -help` / 帮助 / `/help` / 怎么用 / 使用说明 | `references/help.md` | — |
 | 首次配置 / 重新配置 / 缺少必要参数 | `references/setup.md` | `init_config.py` |
 | 添加 / 删除 / 查看 / 备注监控商品 | `references/manage.md` | `asin_utils.py` |
 | 查询趋势、价格、排名、爆款榜单 | `references/query.md` | `analyze.py` / `data_provider.py` |
 | 生成报告 / 周报 / 月报 | `references/report.md` | `weekly_report.py` |
-| 帮助 / `/help` / 怎么用 / 使用说明 | `references/help.md` | — |
 | 飞书卡片回调（manage_products / view_trend）| `references/manage.md` | `asin_utils.py` |
 | 飞书卡片回调（show_help）| `references/help.md` | — |
 | 飞书卡片回调（reset_config）| `references/setup.md` | `init_config.py` |

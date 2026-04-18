@@ -1,6 +1,15 @@
 ---
 name: amazon-tracker
 version: 1.0
+commands:
+  - name: amz
+    description: "Amazon Product Tracker — 启动亚马逊商品监控助手"
+    usage: "/amz [-help] [意图描述]"
+    examples:
+      - "/amz"
+      - "/amz -help"
+      - "/amz 帮我监控 B0CHWX8DFH"
+      - "/amz 生成周报"
 ---
 
 # Purpose
