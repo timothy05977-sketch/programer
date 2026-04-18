@@ -15,11 +15,11 @@ _DEFAULTS = {
 }
 
 _MARKETPLACE_DOMAINS = {
-    "US": "https://www.amazon.com",
-    "JP": "https://www.amazon.co.jp",
-    "UK": "https://www.amazon.co.uk",
-    "DE": "https://www.amazon.de",
-    "CA": "https://www.amazon.ca",
+    "US": "amazon.com",
+    "JP": "amazon.co.jp",
+    "UK": "amazon.co.uk",
+    "DE": "amazon.de",
+    "CA": "amazon.ca",
 }
 
 
@@ -27,9 +27,8 @@ def load() -> dict:
     cfg = dict(_DEFAULTS)
     if _CONFIG_FILE.exists():
         cfg.update(json.loads(_CONFIG_FILE.read_text()))
-    # Env vars override file (useful for CI / secrets)
-    for key in ("RAINFOREST_API_KEY", "FEISHU_DOC_TOKEN",
-                 "FEISHU_BITABLE_TOKEN", "FEISHU_BITABLE_TABLE_ID"):
+    for key in ("RAINFOREST_API_KEY", "FEISHU_DOC_TOKEN", "FEISHU_BITABLE_TOKEN",
+                "FEISHU_BITABLE_TABLE_ID"):
         val = os.environ.get(key)
         if val:
             cfg[key.lower()] = val
@@ -46,9 +45,9 @@ def get(key: str, default=None):
     return load().get(key, default)
 
 
-def amazon_base_url() -> str:
+def amazon_domain() -> str:
     market = get("amazon_marketplace", "US")
-    return _MARKETPLACE_DOMAINS.get(market, _MARKETPLACE_DOMAINS["US"])
+    return _MARKETPLACE_DOMAINS.get(market, "amazon.com")
 
 
 def is_initialized() -> bool:
