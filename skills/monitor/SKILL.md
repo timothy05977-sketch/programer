@@ -1,6 +1,6 @@
 ---
-name: monitor
-description: Run the Amazon product monitoring cycle. Triggered automatically every 20 minutes by the scheduler, or manually when the user says "刷新/refresh/立即检查/手动触发". Executes the full fixed chain: fetch product snapshots → analyze trends → send Feishu report card → append to Feishu document → write snapshots to Bitable. Do NOT use this skill for user queries, product management, or report generation — those go to the agent skill.
+name: amz-Monitor
+description: 亚马逊商品监控 Agent 的自动采集 Skill。每 20 分钟触发一次，执行：采集商品快照 → 分析趋势告警 → 推送飞书卡片 → 追加文档 → 写入 Bitable。
 ---
 
 # Monitor

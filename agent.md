@@ -20,8 +20,8 @@ commands:
 
 | Skill | 驱动 | 职责 |
 |-------|------|------|
-| monitor | 定时 | 完整 20 分钟循环 |
-| agent | 对话 | 配置、商品管理、查询、报告 |
+| amz-Monitor | 定时 | 完整 20 分钟循环 |
+| amz-Agent | 对话 | 配置、商品管理、查询、报告 |
 
 # Decision Rules
 

@@ -1,6 +1,6 @@
 ---
-name: agent
-description: Handle all user-initiated interactions with the Amazon Product Tracker. Triggers on the "/amz" slash command (with or without arguments) and on any natural-language message requesting: configuration or first-time setup (配置/初始化/setup), adding or removing monitored products (添加/删除/查看商品/ASIN), querying trends or prices (趋势/价格/排名/变化/走势/爆款榜单), generating reports (报告/周报/月报/汇总), or asking for help (/amz -help, /help, 帮助, 怎么用). Also handles Feishu card callback actions (manage_products, view_trend, show_help, reset_config). Do NOT use for the automated 20-minute monitoring cycle.
+name: amz-Agent
+description: 亚马逊商品监控 Agent 的用户交互 Skill。负责响应 /amz 命令及自然语言消息，处理首次配置、商品增删管理、趋势与排名查询、周报月报生成，以及飞书卡片回调。
 ---
 
 # Agent
