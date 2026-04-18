@@ -1,0 +1,61 @@
+# Setup Reference
+
+## 触发条件
+
+- 用户首次使用
+- `scripts/init_config.py check` 返回 `initialized: false`
+- 用户说"重新配置"/"reset config"
+
+## 配置收集流程
+
+每次只问一个问题，等用户回答后再继续。
+
+### Step 1 — Amazon 市场
+```
+你想监控哪个 Amazon 市场？
+  1. 美国 (US) · amazon.com
+  2. 日本 (JP) · amazon.co.jp
+  3. 英国 (UK) · amazon.co.uk
+  4. 德国 (DE) · amazon.de
+  5. 加拿大 (CA) · amazon.ca
+```
+
+### Step 2 — Rainforest API Key
+说明：用于稳定获取 Amazon 数据。无此 Key 时自动降级直接爬取，但稳定性较低。
+- 接受用户粘贴 Key
+- 或用户选择「跳过，使用爬取降级」
+
+### Step 3 — 飞书文档 Token
+说明：监控报告每 20 分钟追加写入的目标文档。
+提示：打开飞书文档，URL 末段即为 Token。
+例：`https://xxx.feishu.cn/docx/AbCdEfGh` → Token 是 `AbCdEfGh`
+
+### Step 4 — 飞书多维表格
+依次收集：
+1. `feishu_bitable_token` — 多维表格应用 Token（与文档同一个飞书账号下）
+2. `feishu_bitable_table_id` — 数据表 ID（在多维表格 URL 中可找到）
+
+### Step 5 — 初始监控商品
+询问至少 1 个 ASIN（10 位大写字母数字），支持逗号分隔批量输入。
+或选择「暂时跳过，稍后添加」。
+
+## 完成后执行
+
+```bash
+python scripts/init_config.py save \
+  --amazon-marketplace US \
+  --rainforest-api-key <KEY> \
+  --feishu-doc-token <TOKEN> \
+  --feishu-bitable-token <TOKEN> \
+  --feishu-bitable-table-id <ID>
+```
+
+验证：
+```bash
+python scripts/init_config.py test-rainforest   # 若有 Key
+```
+
+飞书文档权限：用飞书插件「更新云文档」工具向文档写入一行「Amazon 监控初始化 ✓」测试权限。
+
+全部通过 → 发确认消息「配置完成，监控将在下一个 20 分钟节点启动」
+任一失败 → 说明具体原因，引导用户重新填写对应项

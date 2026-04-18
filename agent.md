@@ -9,15 +9,10 @@ version: 1.0
 
 # Capabilities
 
-| Skill | 职责 |
-|-------|------|
-| init-tracker | 首次配置引导 |
-| manage-products | 增删改查监控商品 |
-| fetch-data | 获取商品快照（Rainforest → 降级爬取）|
-| analyze-trend | 趋势分析 + 焦点商品判断 |
-| feishu-notify | 发送汇报卡片 & 告警卡片 |
-| feishu-doc | 追加飞书文档 & 更新 Bitable |
-| generate-report | 生成周报/月报 |
+| Skill | 驱动方 | 职责 |
+|-------|--------|------|
+| monitor | 机器（定时） | 采集 → 分析 → 飞书卡片 → 文档追加，完整 20 分钟循环 |
+| agent | 人（对话） | 配置初始化、商品增删、趋势查询、报告生成 |
 
 # Scheduling（20-Minute Cycle）
 
