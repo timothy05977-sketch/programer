@@ -51,11 +51,7 @@ def test_rainforest():
 
 def check():
     conf = cfg.load()
-    required = ("amazon_marketplace", "feishu_doc_token",
-                "feishu_bitable_token",
-                "feishu_bitable_table_id_products",
-                "feishu_bitable_table_id_snapshots")
-    missing = [k for k in required if not conf.get(k)]
+    missing = [k for k in cfg.REQUIRED_KEYS if not conf.get(k)]
     print(json.dumps({
         "initialized": len(missing) == 0,
         "missing": missing,

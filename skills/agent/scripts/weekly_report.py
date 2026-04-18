@@ -38,12 +38,14 @@ def aggregate(p: dict) -> dict:
     trend = "数据不足"
     if len(ranks) >= 5:
         avg = sum(ranks) / len(ranks)
-        std = (sum((r - avg) ** 2 for r in ranks) / len(ranks)) ** 0.5
-        recent_avg = sum(ranks[-5:]) / 5
-        trend = ("波动" if std > avg * 0.2
-                 else "持续上升" if recent_avg < avg
-                 else "持续下降" if recent_avg > avg
-                 else "稳定")
+        first, recent_5 = ranks[0], ranks[-5:]
+        if avg < first and all(r < avg for r in recent_5):
+            trend = "持续上升"
+        elif avg > first and all(r > avg for r in recent_5):
+            trend = "持续下降"
+        else:
+            std = (sum((r - avg) ** 2 for r in ranks) / len(ranks)) ** 0.5
+            trend = "波动" if std > avg * 0.2 else "稳定"
     elif len(ranks) >= 2:
         trend = "稳定" if abs(ranks[-1] - ranks[0]) <= 5 else "波动"
 

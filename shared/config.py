@@ -51,7 +51,15 @@ def amazon_domain() -> str:
     return _MARKETPLACE_DOMAINS.get(market, "amazon.com")
 
 
+REQUIRED_KEYS = (
+    "amazon_marketplace",
+    "feishu_doc_token",
+    "feishu_bitable_token",
+    "feishu_bitable_table_id_products",
+    "feishu_bitable_table_id_snapshots",
+)
+
+
 def is_initialized() -> bool:
-    required = ["rainforest_api_key", "feishu_doc_token", "amazon_marketplace"]
     cfg = load()
-    return all(cfg.get(k) for k in required)
+    return all(cfg.get(k) for k in REQUIRED_KEYS)

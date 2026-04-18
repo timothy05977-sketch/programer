@@ -314,6 +314,31 @@ programer/
 
 ---
 
+## 测试
+
+脚本层使用 pytest 单元测试 + HTTP mock 集成测试，零外部依赖，< 3 秒跑完。
+
+```bash
+pip install pytest responses
+python -m pytest tests/ -v
+```
+
+覆盖范围：
+
+| 文件 | 测试 |
+|------|------|
+| `tests/test_asin_utils.py` | ASIN 规范化、校验、CLI |
+| `tests/test_analyze.py` | 趋势标签、告警阈值、焦点商品、CLI stdin/stdout |
+| `tests/test_weekly_report.py` | 聚合统计、周/月报趋势分级、CLI |
+| `tests/test_rainforest.py` | API 正常路径、缺字段、HTTP 错误、缺 key |
+| `tests/test_scraper.py` | 页面解析、容错、HTTP 错误 |
+| `tests/test_data_provider.py` | 降级链（Rainforest → scraper）、429 退避 |
+| `tests/test_config.py` | 默认值、env 覆盖、`is_initialized()` 必填校验 |
+
+端到端（飞书卡片 / 文档 / Bitable 真实写入）不在脚本测试范围内，请在测试飞书租户手动演练。
+
+---
+
 ## 开发者说明
 
 - **所有脚本零 DB 依赖**：接受 stdin JSON，输出 stdout JSON，由 agent 通过飞书插件读写 Bitable
