@@ -69,6 +69,35 @@ class TestGetProduct:
         assert snap.sales_rank is None
 
 
+class TestParsePrice:
+    def test_usd(self):
+        assert scraper._parse_price("$24.99") == 24.99
+
+    def test_gbp(self):
+        assert scraper._parse_price("£19.50") == 19.50
+
+    def test_eur_comma_decimal(self):
+        assert scraper._parse_price("€29,90") == 29.90
+
+    def test_eur_dot_thousands_comma_decimal(self):
+        assert scraper._parse_price("1.234,56 €") == 1234.56
+
+    def test_us_thousands(self):
+        assert scraper._parse_price("$1,234.56") == 1234.56
+
+    def test_jpy_no_decimals(self):
+        assert scraper._parse_price("￥1,980") == 1980.0
+
+    def test_canadian(self):
+        assert scraper._parse_price("CA$34.00") == 34.00
+
+    def test_na_returns_none(self):
+        assert scraper._parse_price("N/A") is None
+
+    def test_empty_returns_none(self):
+        assert scraper._parse_price("") is None
+
+
 class TestGetBestsellers:
     @responses.activate
     def test_empty_page(self):

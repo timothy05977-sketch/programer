@@ -37,11 +37,18 @@ def aggregate(p: dict) -> dict:
 
     trend = "数据不足"
     if len(ranks) >= 5:
+        # 持续上升/下降：相邻快照的方向占比 ≥ 70% 且终点较起点有显著变化。
+        # 否则用 std/avg 比例区分「波动」与「稳定」。
+        deltas = [ranks[i + 1] - ranks[i] for i in range(len(ranks) - 1)]
+        pos = sum(1 for d in deltas if d > 0)
+        neg = sum(1 for d in deltas if d < 0)
         avg = sum(ranks) / len(ranks)
-        first, recent_5 = ranks[0], ranks[-5:]
-        if avg < first and all(r < avg for r in recent_5):
+        total_change = ranks[-1] - ranks[0]
+        significant = abs(total_change) >= max(5, avg * 0.1)
+        majority = len(deltas) * 0.7
+        if significant and neg >= majority and total_change < 0:
             trend = "持续上升"
-        elif avg > first and all(r > avg for r in recent_5):
+        elif significant and pos >= majority and total_change > 0:
             trend = "持续下降"
         else:
             std = (sum((r - avg) ** 2 for r in ranks) / len(ranks)) ** 0.5

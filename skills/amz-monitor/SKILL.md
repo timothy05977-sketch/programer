@@ -9,10 +9,11 @@ description: 亚马逊商品监控 Agent 的自动采集 Skill。每 20 分钟�
 
 ## 前置检查
 
-启动前确认配置完整：
-- `amazon_marketplace` 已设置
-- `feishu_doc_token` 已设置
-- Bitable 监控商品表不为空（`feishu_bitable_token` + `feishu_bitable_table_id` 已配置）
+启动前用 `python skills/amz-agent/scripts/init_config.py check` 确认：
+- `initialized: true`
+- `missing: []`
+
+必填配置：`amazon_marketplace`、`feishu_doc_token`、`feishu_bitable_token`、`feishu_bitable_table_id_products`、`feishu_bitable_table_id_snapshots`。
 
 任一缺失 → 停止本轮，通过飞书插件发送提示消息，触发 amz-agent 完成配置。
 
@@ -96,7 +97,13 @@ echo '<stdin json>' | python scripts/analyze.py --all
 [查看趋势]
 ```
 
-同一商品同方向连续 2 次告警：末尾追加「⚠ 持续变化中」
+### 持续变化检测
+
+同一商品同方向连续 2 次告警时，末尾追加「⚠ 持续变化中」。检测步骤：
+
+1. 用飞书插件「多维表格-查询记录」，从 snapshots 表筛选：`ASIN == {asin}` AND `趋势标签 == "⚠ 异动"`，按 `记录时间` 倒序取 1 条（本轮快照尚未写入，所以这是上一次告警快照）。
+2. 若查到且其 `排名变化` 与当前 `rank_delta` 同号（都为正 = 连续上升告警；都为负 = 连续下降告警）→ 追加「⚠ 持续变化中」。
+3. 查不到或方向相反 → 普通告警卡片。
 
 ## Step 7 — 追加飞书文档
 

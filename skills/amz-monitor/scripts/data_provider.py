@@ -73,16 +73,30 @@ def cmd_fetch(args):
 
 def cmd_bestsellers(args):
     key = cfg.get("rainforest_api_key")
-    try:
-        if key:
+    errors = []
+    items = None
+    source = None
+
+    if key:
+        try:
             items = rainforest.get_bestsellers(args.category, args.top)
             source = "rainforest"
-        else:
-            raise ValueError("no key")
-    except Exception:
-        items = scraper.get_bestsellers(args.category, args.top)
-        source = "scraper"
-    print(json.dumps({"source": source, "category": args.category,
+        except Exception as e:
+            errors.append(f"rainforest: {e}")
+
+    if items is None:
+        try:
+            items = scraper.get_bestsellers(args.category, args.top)
+            source = "scraper"
+        except Exception as e:
+            errors.append(f"scraper: {e}")
+
+    if items is None:
+        print(json.dumps({"status": "failed", "category": args.category,
+                          "errors": errors}))
+        return
+
+    print(json.dumps({"status": "ok", "source": source, "category": args.category,
                       "count": len(items), "items": items}))
 
 

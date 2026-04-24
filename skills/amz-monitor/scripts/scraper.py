@@ -1,10 +1,11 @@
 """Direct Amazon scraper — fallback when Rainforest API is unavailable."""
 from __future__ import annotations
 import random
+import re
 import time
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 
 import requests
 from bs4 import BeautifulSoup
@@ -12,6 +13,27 @@ from bs4 import BeautifulSoup
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from shared import config as cfg
 from shared.models import Snapshot
+
+
+def _parse_price(raw: str):
+    # Support US/JP/UK/DE/CA price strings. Strips currency symbols, then
+    # normalizes thousands/decimal separators using the "later wins" rule.
+    s = re.sub(r"[^\d.,]", "", raw or "")
+    if not s:
+        return None
+    last_dot, last_comma = s.rfind("."), s.rfind(",")
+    if last_dot >= 0 and last_comma >= 0:
+        s = s.replace(",", "") if last_dot > last_comma else s.replace(".", "").replace(",", ".")
+    elif last_comma >= 0:
+        # Single comma: 3-digit tail → thousands (e.g. JPY 1,980), else EU decimal.
+        s = s.replace(",", "") if len(s) - last_comma - 1 == 3 else s.replace(",", ".")
+    elif last_dot >= 0 and len(s) - last_dot - 1 == 3:
+        # Single dot with 3-digit tail → EU thousands (e.g. DE "1.234").
+        s = s.replace(".", "")
+    try:
+        return float(s)
+    except ValueError:
+        return None
 
 _USER_AGENTS = [
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
@@ -59,10 +81,7 @@ def get_product(asin: str) -> Snapshot:
         el = soup.select_one(sel)
         if el:
             price = _clean(el)
-            try:
-                price_val = float(price.replace("$", "").replace(",", ""))
-            except ValueError:
-                pass
+            price_val = _parse_price(price)
             break
 
     rating_el = soup.select_one("#acrPopover span.a-icon-alt")
@@ -79,7 +98,6 @@ def get_product(asin: str) -> Snapshot:
     for row in soup.select("#detailBullets_feature_div li, #productDetails_detailBullets_sections1 tr"):
         text = row.get_text(" ", strip=True)
         if "Best Sellers Rank" in text or "Best-sellers rank" in text:
-            import re
             m = re.search(r"#([\d,]+)\s+in\s+(.+?)(?:\s+\(|$)", text)
             if m:
                 rank = int(m.group(1).replace(",", ""))
@@ -90,7 +108,8 @@ def get_product(asin: str) -> Snapshot:
         asin=asin, title=title, price=price, price_value=price_val,
         rating=rating, review_count=review_count, availability=availability,
         sales_rank=rank, rank_category=rank_cat,
-        data_source="scraper", fetched_at=datetime.utcnow().isoformat(),
+        data_source="scraper",
+        fetched_at=datetime.now(timezone.utc).isoformat(),
     )
 
 

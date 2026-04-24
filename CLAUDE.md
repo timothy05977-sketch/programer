@@ -11,8 +11,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 常用命令
 
 ```bash
-# 安装依赖
+# 安装运行依赖
 pip install -r requirements.txt
+
+# 安装开发依赖（pytest + responses）
+pip install -r requirements-dev.txt
 
 # 运行全部测试
 python -m pytest tests/ -v
@@ -93,7 +96,9 @@ SKILL.md frontmatter（`name` + `description`）始终加载；body 仅在 Skill
 
 `rainforest_api_key` 可选，缺失时自动降级爬取。
 
-环境变量名为配置 key 的大写形式（如 `FEISHU_DOC_TOKEN`），可覆盖文件配置。
+所有 `_ENV_OVERRIDABLE_KEYS`（见 `shared/config.py`）均可用其大写形式作为环境变量覆盖（如 `FEISHU_DOC_TOKEN`、`AMAZON_MARKETPLACE`）。
+
+`config.save()` 只持久化显式传入的 key，`_DEFAULTS` 始终由代码控制，不会写入配置文件。
 
 ## 扩展规范
 

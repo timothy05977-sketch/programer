@@ -99,6 +99,55 @@ class TestFetchOne:
         assert 60 in sleeps
 
 
+class TestBestsellers:
+    def test_ok_prefers_rainforest(self, monkeypatch):
+        monkeypatch.setenv("RAINFOREST_API_KEY", "k")
+        monkeypatch.setattr(data_provider.rainforest, "get_bestsellers",
+                            lambda c, n: [{"rank": 1, "asin": "A"}])
+        monkeypatch.setattr(data_provider.scraper, "get_bestsellers",
+                            lambda c, n: [{"rank": 1, "asin": "FROM_SCRAPER"}])
+
+        import argparse
+        captured = {}
+        monkeypatch.setattr("builtins.print", lambda s: captured.update(json.loads(s)))
+        data_provider.cmd_bestsellers(argparse.Namespace(category="books", top=10))
+        assert captured["status"] == "ok"
+        assert captured["source"] == "rainforest"
+
+    def test_rainforest_fails_falls_back_to_scraper(self, monkeypatch):
+        monkeypatch.setenv("RAINFOREST_API_KEY", "k")
+
+        def _boom(c, n):
+            raise RuntimeError("rainforest down")
+
+        monkeypatch.setattr(data_provider.rainforest, "get_bestsellers", _boom)
+        monkeypatch.setattr(data_provider.scraper, "get_bestsellers",
+                            lambda c, n: [{"rank": 1, "asin": "S"}])
+
+        import argparse
+        captured = {}
+        monkeypatch.setattr("builtins.print", lambda s: captured.update(json.loads(s)))
+        data_provider.cmd_bestsellers(argparse.Namespace(category="books", top=10))
+        assert captured["status"] == "ok"
+        assert captured["source"] == "scraper"
+
+    def test_both_fail_returns_json_error(self, monkeypatch):
+        monkeypatch.setenv("RAINFOREST_API_KEY", "k")
+
+        def _boom(c, n):
+            raise RuntimeError("boom")
+
+        monkeypatch.setattr(data_provider.rainforest, "get_bestsellers", _boom)
+        monkeypatch.setattr(data_provider.scraper, "get_bestsellers", _boom)
+
+        import argparse
+        captured = {}
+        monkeypatch.setattr("builtins.print", lambda s: captured.update(json.loads(s)))
+        data_provider.cmd_bestsellers(argparse.Namespace(category="books", top=10))
+        assert captured["status"] == "failed"
+        assert len(captured["errors"]) == 2
+
+
 class TestCLI:
     def _run(self, subcmd, *extra):
         return subprocess.run(

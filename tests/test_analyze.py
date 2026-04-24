@@ -103,6 +103,13 @@ class TestAnalyzeProduct:
         out = analyze.analyze_product({"asin": "B00TEST0000", "history": history})
         assert out["title"] == "from-snap"
 
+    def test_curr_rank_none_does_not_leak_literal(self):
+        # When scraper returns no rank, summary must not contain the string "#None".
+        history = [_snap(rank=None), _snap(rank=18)]
+        out = analyze.analyze_product({"asin": "B00TEST0000", "history": history})
+        assert "#None" not in out["summary"]
+        assert "获取失败" in out["summary"]
+
 
 class TestRunAll:
     def test_focus_selects_largest_abs_delta(self):
@@ -129,6 +136,15 @@ class TestRunAll:
         assert out["products"] == []
         assert out["alerts"] == []
         assert out["focus"] is None
+
+    def test_focus_tiebreak_prefers_higher_rank(self):
+        # Both have abs(rank_delta) == 5. Tie-break: higher current rank = lower number.
+        products = [
+            {"asin": "A00000000A", "history": [_snap(rank=100), _snap(rank=105)]},  # delta +5, rank #100
+            {"asin": "B00000000B", "history": [_snap(rank=10),  _snap(rank=15)]},   # delta +5, rank #10
+        ]
+        out = analyze.run_all(products)
+        assert out["focus"]["asin"] == "B00000000B"
 
 
 class TestCLI:

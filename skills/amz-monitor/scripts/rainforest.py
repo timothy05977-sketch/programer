@@ -8,7 +8,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from shared import config as cfg
 from shared.models import Snapshot
-from datetime import datetime
+from datetime import datetime, timezone
 
 BASE_URL = "https://api.rainforestapi.com/request"
 
@@ -71,7 +71,7 @@ def get_product(asin: str) -> Snapshot:
         sales_rank=rank,
         rank_category=rank_cat,
         data_source="rainforest",
-        fetched_at=datetime.utcnow().isoformat(),
+        fetched_at=datetime.now(timezone.utc).isoformat(),
     )
 
 

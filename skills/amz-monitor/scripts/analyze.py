@@ -36,7 +36,9 @@ def _label(rank_deltas: list[int]) -> str:
 
 
 def _summary(label: str, curr_rank, prev_rank, curr_price, prev_price) -> str:
-    if prev_rank is None or curr_rank is None:
+    if curr_rank is None:
+        return "当前排名数据获取失败，无法分析趋势。"
+    if prev_rank is None:
         return f"首次快照，排名 #{curr_rank}，无历史对比基准。"
     delta = prev_rank - curr_rank
     up = delta > 0
@@ -50,11 +52,10 @@ def _summary(label: str, curr_rank, prev_rank, curr_price, prev_price) -> str:
         except Exception:
             pass
     notes = {
-        "⚠ 异动":    "单次大幅跳升，建议持续关注。" if up else "单次大幅下滑，建议关注竞争压力。",
-        "📈 上升":    "连续上升趋势明显。",
-        "📉 下降":    "连续下降，需关注竞争变化。",
-        "➡ 稳定":    "数据稳定，无明显异动。",
-        "— 数据不足": "快照数据不足，趋势待积累。",
+        "⚠ 异动": "单次大幅跳升，建议持续关注。" if up else "单次大幅下滑，建议关注竞争压力。",
+        "📈 上升": "连续上升趋势明显。",
+        "📉 下降": "连续下降，需关注竞争变化。",
+        "➡ 稳定": "数据稳定，无明显异动。",
     }
     return rank_desc + price_desc + " " + notes.get(label, "")
 
@@ -104,13 +105,15 @@ def analyze_product(p: dict) -> dict:
 
 def run_all(products: list[dict]) -> dict:
     results = [analyze_product(p) for p in products]
-    valid   = [r for r in results if r.get("rank_delta") is not None]
-    focus   = max(valid, key=lambda r: abs(r["rank_delta"])) if valid else (results[0] if results else None)
+    valid = [r for r in results if r.get("rank_delta") is not None]
+    # Focus: largest abs(rank_delta); tie → higher current rank (lower rank number).
+    focus = max(valid, key=lambda r: (abs(r["rank_delta"]), -r["rank_curr"])) \
+        if valid else (results[0] if results else None)
     return {
         "cycle_time": datetime.now(timezone.utc).isoformat(),
-        "focus":    focus,
+        "focus": focus,
         "products": results,
-        "alerts":   [r for r in results if r.get("alert")],
+        "alerts": [r for r in results if r.get("alert")],
     }
 
 

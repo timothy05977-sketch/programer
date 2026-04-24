@@ -23,23 +23,38 @@ _MARKETPLACE_DOMAINS = {
 }
 
 
+_ENV_OVERRIDABLE_KEYS = (
+    "amazon_marketplace",
+    "rainforest_api_key",
+    "feishu_doc_token",
+    "feishu_bitable_token",
+    "feishu_bitable_table_id_products",
+    "feishu_bitable_table_id_snapshots",
+    "alert_threshold",
+    "interval_minutes",
+    "report_language",
+    "timezone_offset",
+)
+
+
 def load() -> dict:
     cfg = dict(_DEFAULTS)
     if _CONFIG_FILE.exists():
         cfg.update(json.loads(_CONFIG_FILE.read_text()))
-    for key in ("RAINFOREST_API_KEY", "FEISHU_DOC_TOKEN", "FEISHU_BITABLE_TOKEN",
-                "FEISHU_BITABLE_TABLE_ID_PRODUCTS",
-                "FEISHU_BITABLE_TABLE_ID_SNAPSHOTS"):
-        val = os.environ.get(key)
-        if val:
-            cfg[key.lower()] = val
+    for key in _ENV_OVERRIDABLE_KEYS:
+        val = os.environ.get(key.upper())
+        if val is not None and val != "":
+            cfg[key] = val
     return cfg
 
 
 def save(updates: dict) -> None:
-    cfg = load()
-    cfg.update(updates)
-    _CONFIG_FILE.write_text(json.dumps(cfg, ensure_ascii=False, indent=2))
+    # Persist only explicit user values so _DEFAULTS stay centralized in code.
+    existing = {}
+    if _CONFIG_FILE.exists():
+        existing = json.loads(_CONFIG_FILE.read_text())
+    existing.update(updates)
+    _CONFIG_FILE.write_text(json.dumps(existing, ensure_ascii=False, indent=2))
 
 
 def get(key: str, default=None):

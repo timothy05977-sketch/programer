@@ -16,10 +16,8 @@ def _tmp_cfg_file(monkeypatch, tmp_path):
     f = tmp_path / ".tracker_config.json"
     monkeypatch.setattr(cfg, "_CONFIG_FILE", f)
     # Strip any env vars that would leak into load()
-    for k in ("RAINFOREST_API_KEY", "FEISHU_DOC_TOKEN", "FEISHU_BITABLE_TOKEN",
-              "FEISHU_BITABLE_TABLE_ID_PRODUCTS",
-              "FEISHU_BITABLE_TABLE_ID_SNAPSHOTS"):
-        monkeypatch.delenv(k, raising=False)
+    for k in cfg._ENV_OVERRIDABLE_KEYS:
+        monkeypatch.delenv(k.upper(), raising=False)
     yield f
 
 
@@ -88,6 +86,21 @@ class TestConfigModule:
             "feishu_doc_token": "t",
         })
         assert cfg.is_initialized() is False
+
+    def test_env_overrides_marketplace(self, monkeypatch):
+        # Generic env override — all keys, not just a hardcoded list.
+        monkeypatch.setenv("AMAZON_MARKETPLACE", "UK")
+        assert cfg.get("amazon_marketplace") == "UK"
+
+    def test_env_overrides_doc_token(self, monkeypatch):
+        monkeypatch.setenv("FEISHU_DOC_TOKEN", "from-env")
+        assert cfg.get("feishu_doc_token") == "from-env"
+
+    def test_save_does_not_persist_defaults(self, _tmp_cfg_file):
+        # Only explicit updates should be written, not _DEFAULTS.
+        cfg.save({"feishu_doc_token": "only-this"})
+        saved = json.loads(_tmp_cfg_file.read_text())
+        assert saved == {"feishu_doc_token": "only-this"}
 
 
 class TestInitConfigScript:
