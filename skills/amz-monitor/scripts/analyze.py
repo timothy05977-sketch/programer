@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Trend analysis — pure computation, no DB access.
 
 Input via stdin JSON:

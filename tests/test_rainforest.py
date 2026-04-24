@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """L2 mock tests for skills/amz-monitor/scripts/rainforest.py"""
 import pytest
 import responses

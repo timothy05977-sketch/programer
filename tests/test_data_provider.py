@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """L2 tests for skills/amz-monitor/scripts/data_provider.py — fallback chain."""
 import json
 import subprocess

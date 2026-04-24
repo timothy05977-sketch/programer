@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Tests for skills/amz-agent/scripts/weekly_report.py"""
 import json
 import subprocess

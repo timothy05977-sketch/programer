@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Rainforest API client — primary Amazon data source."""
 from __future__ import annotations
 import sys

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Shared data models."""
 from __future__ import annotations
 from dataclasses import dataclass, field

@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Validate and persist agent configuration."""
 import argparse
 import json

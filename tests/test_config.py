@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Tests for shared/config.py and skills/amz-agent/scripts/init_config.py"""
 import json
 import subprocess

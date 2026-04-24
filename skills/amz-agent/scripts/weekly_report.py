@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Weekly/monthly report aggregation — pure computation, no DB access.
 
 Input via stdin JSON:

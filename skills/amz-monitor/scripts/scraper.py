@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Direct Amazon scraper — fallback when Rainforest API is unavailable."""
 from __future__ import annotations
 import random

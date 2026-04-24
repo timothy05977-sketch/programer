@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Agent configuration — loaded from env vars or written by init-tracker."""
 from __future__ import annotations
 import json

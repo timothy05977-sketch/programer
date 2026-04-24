@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Tests for skills/amz-agent/scripts/asin_utils.py"""
 import json
 import subprocess

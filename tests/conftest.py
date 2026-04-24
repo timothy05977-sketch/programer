@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Pytest fixtures — make shared + skill scripts importable."""
 import sys
 from pathlib import Path

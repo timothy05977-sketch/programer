@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Tests for skills/amz-monitor/scripts/analyze.py"""
 import json
 import subprocess

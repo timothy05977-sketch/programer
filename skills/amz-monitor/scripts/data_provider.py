@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 xiao
 """Fetch Amazon product snapshots. Outputs JSON only — no DB writes.
 Agent persists results to Feishu Bitable via the OpenClaw plugin."""
 from __future__ import annotations
