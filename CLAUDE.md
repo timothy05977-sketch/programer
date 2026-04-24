@@ -24,19 +24,19 @@ python -m pytest tests/test_analyze.py -v
 python -m pytest tests/test_analyze.py::TestLabel::test_consecutive_up -v
 
 # 配置检查
-python skills/agent/scripts/init_config.py check
+python skills/amz-agent/scripts/init_config.py check
 
 # 测试 Rainforest API Key 是否有效
-python skills/agent/scripts/init_config.py test-rainforest
+python skills/amz-agent/scripts/init_config.py test-rainforest
 
 # 手动采集快照（输出 JSON）
-python skills/monitor/scripts/data_provider.py fetch --asin B0CHWX8DFH
+python skills/amz-monitor/scripts/data_provider.py fetch --asin B0CHWX8DFH
 
 # 手动趋势分析（从 stdin 读 JSON）
-echo '{"products":[...]}' | python skills/monitor/scripts/analyze.py --all
+echo '{"products":[...]}' | python skills/amz-monitor/scripts/analyze.py --all
 
 # 生成周报（从 stdin 读 JSON）
-echo '{"products":[...]}' | python skills/agent/scripts/weekly_report.py --days 7
+echo '{"products":[...]}' | python skills/amz-agent/scripts/weekly_report.py --days 7
 ```
 
 ## 架构
@@ -45,8 +45,8 @@ echo '{"products":[...]}' | python skills/agent/scripts/weekly_report.py --days 
 
 | Skill | 文件 | 触发方式 | 职责 |
 |-------|------|---------|------|
-| `amz-Monitor` | `skills/monitor/SKILL.md` | 定时调度（每 20 分钟）| 采集 → 分析 → 推送卡片 → 写文档 → 写 Bitable |
-| `amz-Agent` | `skills/agent/SKILL.md` | 用户消息 / `/amz` 命令 | 配置引导、商品管理、查询、报告生成 |
+| `amz-monitor` | `skills/amz-monitor/SKILL.md` | 定时调度（每 20 分钟）| 采集 → 分析 → 推送卡片 → 写文档 → 写 Bitable |
+| `amz-agent` | `skills/amz-agent/SKILL.md` | 用户消息 / `/amz` 命令 | 配置引导、商品管理、查询、报告生成 |
 
 SKILL.md frontmatter（`name` + `description`）始终加载；body 仅在 Skill 触发时加载；`references/*.md` 按意图按需加载（progressive disclosure）。
 
@@ -56,13 +56,13 @@ SKILL.md frontmatter（`name` + `description`）始终加载；body 仅在 Skill
 
 | 脚本 | 位置 | 输入 | 输出 |
 |------|------|------|------|
-| `data_provider.py` | `skills/monitor/scripts/` | CLI 参数（`--asin`）| 快照 JSON |
-| `analyze.py` | `skills/monitor/scripts/` | stdin JSON（products + history）| 趋势/告警 JSON |
-| `rainforest.py` | `skills/monitor/scripts/` | 被 data_provider 调用 | Snapshot 对象 |
-| `scraper.py` | `skills/monitor/scripts/` | 被 data_provider 调用 | Snapshot 对象 |
-| `init_config.py` | `skills/agent/scripts/` | CLI 参数 | 配置状态 JSON |
-| `asin_utils.py` | `skills/agent/scripts/` | CLI 参数（ASIN 列表）| 校验结果 JSON |
-| `weekly_report.py` | `skills/agent/scripts/` | stdin JSON（products + snapshots）| 报告 JSON |
+| `data_provider.py` | `skills/amz-monitor/scripts/` | CLI 参数（`--asin`）| 快照 JSON |
+| `analyze.py` | `skills/amz-monitor/scripts/` | stdin JSON（products + history）| 趋势/告警 JSON |
+| `rainforest.py` | `skills/amz-monitor/scripts/` | 被 data_provider 调用 | Snapshot 对象 |
+| `scraper.py` | `skills/amz-monitor/scripts/` | 被 data_provider 调用 | Snapshot 对象 |
+| `init_config.py` | `skills/amz-agent/scripts/` | CLI 参数 | 配置状态 JSON |
+| `asin_utils.py` | `skills/amz-agent/scripts/` | CLI 参数（ASIN 列表）| 校验结果 JSON |
+| `weekly_report.py` | `skills/amz-agent/scripts/` | stdin JSON（products + snapshots）| 报告 JSON |
 
 ### 共享层
 
@@ -79,7 +79,7 @@ SKILL.md frontmatter（`name` + `description`）始终加载；body 仅在 Skill
 
 ## 测试
 
-测试框架：`pytest` + `responses`（HTTP mock）。`tests/conftest.py` 将 `shared/`、`skills/monitor/scripts/`、`skills/agent/scripts/` 全部加入 `sys.path`。
+测试框架：`pytest` + `responses`（HTTP mock）。`tests/conftest.py` 将 `shared/`、`skills/amz-monitor/scripts/`、`skills/amz-agent/scripts/` 全部加入 `sys.path`。
 
 测试分两层：
 - **L1 单元测试**：纯函数直接调用（`test_analyze.py`、`test_weekly_report.py`、`test_asin_utils.py`、`test_config.py`）
@@ -97,6 +97,6 @@ SKILL.md frontmatter（`name` + `description`）始终加载；body 仅在 Skill
 
 ## 扩展规范
 
-- 新增用户交互能力：在 `skills/agent/references/` 新增 `.md`，在 `skills/agent/SKILL.md` 意图路由表加一行。
+- 新增用户交互能力：在 `skills/amz-agent/references/` 新增 `.md`，在 `skills/amz-agent/SKILL.md` 意图路由表加一行。
 - 新增脚本：保持 stdin JSON → stdout JSON 协议，不在脚本内调用飞书 API。
-- Bitable schema 变更：对照 `skills/agent/references/bitable-schema.md` 更新字段定义。
+- Bitable schema 变更：对照 `skills/amz-agent/references/bitable-schema.md` 更新字段定义。

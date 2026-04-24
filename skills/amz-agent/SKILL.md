@@ -1,5 +1,5 @@
 ---
-name: amz-Agent
+name: amz-agent
 description: 亚马逊商品监控 Agent 的用户交互 Skill。负责响应 /amz 命令及自然语言消息，处理首次配置、商品增删管理、趋势与排名查询、周报月报生成，以及飞书卡片回调。
 ---
 

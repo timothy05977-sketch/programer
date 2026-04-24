@@ -1,5 +1,5 @@
 ---
-name: amz-Monitor
+name: amz-monitor
 description: 亚马逊商品监控 Agent 的自动采集 Skill。每 20 分钟触发一次，执行：采集商品快照 → 分析趋势告警 → 推送飞书卡片 → 追加文档 → 写入 Bitable。
 ---
 
@@ -14,7 +14,7 @@ description: 亚马逊商品监控 Agent 的自动采集 Skill。每 20 分钟�
 - `feishu_doc_token` 已设置
 - Bitable 监控商品表不为空（`feishu_bitable_token` + `feishu_bitable_table_id` 已配置）
 
-任一缺失 → 停止本轮，通过飞书插件发送提示消息，触发 amz-Agent 完成配置。
+任一缺失 → 停止本轮，通过飞书插件发送提示消息，触发 amz-agent 完成配置。
 
 ## Step 1 — 读取监控商品列表
 

@@ -1,4 +1,4 @@
-"""Tests for shared/config.py and skills/agent/scripts/init_config.py"""
+"""Tests for shared/config.py and skills/amz-agent/scripts/init_config.py"""
 import json
 import subprocess
 import sys
@@ -8,7 +8,7 @@ import pytest
 
 from shared import config as cfg
 
-INIT_SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "agent" / "scripts" / "init_config.py"
+INIT_SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "amz-agent" / "scripts" / "init_config.py"
 
 
 @pytest.fixture(autouse=True)

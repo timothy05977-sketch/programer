@@ -24,12 +24,12 @@
 
 ```
 ┌────────────┐     ┌───────────────────┐     ┌──────────────────┐
-│ 20-min 调度 │ ──▶ │  amz-Monitor      │ ──▶ │  飞书卡片 / 文档   │
+│ 20-min 调度 │ ──▶ │  amz-monitor      │ ──▶ │  飞书卡片 / 文档   │
 └────────────┘     │  （机器驱动）      │     │  飞书多维表格      │
                    └───────────────────┘     └──────────────────┘
                             ▲
 ┌────────────┐     ┌───────────────────┐
-│  用户对话   │ ──▶ │   amz-Agent       │
+│  用户对话   │ ──▶ │   amz-agent       │
 └────────────┘     │   （人驱动）       │
                    └───────────────────┘
 ```
@@ -38,8 +38,8 @@
 |------|------|
 | `soul.md` | Agent 人格定义 · 数据诚实、焦点驱动 |
 | `agent.md` | 整体能力声明 · 调度规则 · 告警标准 |
-| `skills/monitor/` | 定时自动链条（采集 → 分析 → 卡片 → 文档 → Bitable）|
-| `skills/agent/` | 用户交互（配置、商品管理、趋势查询、报告生成）|
+| `skills/amz-monitor/` | 定时自动链条（采集 → 分析 → 卡片 → 文档 → Bitable）|
+| `skills/amz-agent/` | 用户交互（配置、商品管理、趋势查询、报告生成）|
 | `shared/` | 配置加载 + Snapshot 数据模型 |
 | 飞书多维表格（Bitable） | **唯一数据存储**（两张表：products + snapshots）|
 | `@larksuite/openclaw-lark` 插件 | 所有飞书 API 调用由官方插件处理 |
@@ -183,7 +183,7 @@ top 20 玩具
 
 ## 命令与意图
 
-下表列出 amz-Agent 识别的用户意图及映射的内部操作（大部分情况用户无需关心）。
+下表列出 amz-agent 识别的用户意图及映射的内部操作（大部分情况用户无需关心）。
 
 | 意图关键词 | 参考文档 | 涉及脚本 |
 |-----------|---------|---------|
@@ -201,7 +201,7 @@ top 20 玩具
 ## 数据存储
 
 不使用本地 SQLite，所有数据存在飞书多维表格（Bitable），首次配置时由 agent
-自动建表。详见 `skills/agent/references/bitable-schema.md`。
+自动建表。详见 `skills/amz-agent/references/bitable-schema.md`。
 
 ### products 表
 
@@ -231,7 +231,7 @@ top 20 玩具
 
 ## 定时调度
 
-每 20 分钟固定执行 amz-Monitor 的 8 步链条：
+每 20 分钟固定执行 amz-monitor 的 8 步链条：
 
 ```
 1. 读取 products 表 active 商品
@@ -272,7 +272,7 @@ top 20 玩具
 
 ### 无法获取商品数据
 
-1. 检查 Rainforest Key：`python skills/agent/scripts/init_config.py test-rainforest`
+1. 检查 Rainforest Key：`python skills/amz-agent/scripts/init_config.py test-rainforest`
 2. 状态返回 `invalid_api_key` → 重新配置 Key
 3. 无 Key 时会自动降级爬取，但 Amazon 反爬偶发，稍后重试即可
 
@@ -290,7 +290,7 @@ top 20 玩具
 ### 配置检查
 
 ```bash
-python skills/agent/scripts/init_config.py check
+python skills/amz-agent/scripts/init_config.py check
 ```
 
 输出 JSON，包含 `initialized`（是否就绪）、`missing`（缺失项列表）、
@@ -310,14 +310,14 @@ programer/
 │   ├── config.py                  # 配置加载（含环境变量覆盖）
 │   └── models.py                  # Snapshot 数据类
 └── skills/
-    ├── monitor/                   # 机器驱动的 20 分钟循环
+    ├── amz-monitor/               # 机器驱动的 20 分钟循环
     │   ├── SKILL.md
     │   └── scripts/
     │       ├── data_provider.py   # 采集（Rainforest + 爬取降级）
     │       ├── analyze.py         # 趋势分析（纯计算）
     │       ├── rainforest.py
     │       └── scraper.py
-    └── agent/                     # 人驱动的对话
+    └── amz-agent/                 # 人驱动的对话
         ├── SKILL.md               # 意图路由表
         ├── references/
         │   ├── setup.md           # 首次配置引导

@@ -1,4 +1,4 @@
-"""L2 mock tests for skills/monitor/scripts/rainforest.py"""
+"""L2 mock tests for skills/amz-monitor/scripts/rainforest.py"""
 import pytest
 import responses
 

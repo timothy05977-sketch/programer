@@ -1,4 +1,4 @@
-"""L2 tests for skills/monitor/scripts/data_provider.py — fallback chain."""
+"""L2 tests for skills/amz-monitor/scripts/data_provider.py — fallback chain."""
 import json
 import subprocess
 import sys
@@ -10,7 +10,7 @@ from shared import config as cfg
 from shared.models import Snapshot
 import data_provider
 
-SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "monitor" / "scripts" / "data_provider.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "amz-monitor" / "scripts" / "data_provider.py"
 
 
 def _make_snap(asin, source):

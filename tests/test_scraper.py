@@ -1,4 +1,4 @@
-"""L2 mock tests for skills/monitor/scripts/scraper.py"""
+"""L2 mock tests for skills/amz-monitor/scripts/scraper.py"""
 import pytest
 import responses
 

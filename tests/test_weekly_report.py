@@ -1,4 +1,4 @@
-"""Tests for skills/agent/scripts/weekly_report.py"""
+"""Tests for skills/amz-agent/scripts/weekly_report.py"""
 import json
 import subprocess
 import sys
@@ -6,7 +6,7 @@ from pathlib import Path
 
 import weekly_report
 
-SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "agent" / "scripts" / "weekly_report.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "amz-agent" / "scripts" / "weekly_report.py"
 
 
 def _snap(rank=None, price=None, ts="2026-04-18T14:00:00"):
