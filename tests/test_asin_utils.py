@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 xiao
-"""Tests for skills/amz-agent/scripts/asin_utils.py"""
+"""Tests for skills/scavio-amazon/scripts/asin_utils.py"""
 import json
 import subprocess
 import sys
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import asin_utils
 
-SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "amz-agent" / "scripts" / "asin_utils.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "scavio-amazon" / "scripts" / "asin_utils.py"
 
 
 class TestValidate:

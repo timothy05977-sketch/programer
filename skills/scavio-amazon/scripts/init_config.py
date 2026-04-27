@@ -13,7 +13,7 @@ from shared import config as cfg
 
 _CONFIG_KEYS = (
     "amazon_marketplace",
-    "rainforest_api_key",
+    "scavio_api_key",
     "feishu_doc_token",
     "feishu_bitable_token",
     "feishu_bitable_table_id_products",
@@ -28,21 +28,21 @@ def save(args):
     print(json.dumps({"status": "ok", "saved": list(updates.keys())}))
 
 
-def test_rainforest():
+def test_scavio():
     import requests
-    key = cfg.get("rainforest_api_key")
+    key = cfg.get("scavio_api_key")
     if not key:
         print(json.dumps({"status": "skipped", "reason": "no_api_key"}))
         return
     try:
-        resp = requests.get(
-            "https://api.rainforestapi.com/request",
-            params={"api_key": key, "type": "product", "asin": "B08N5WRWNW",
-                    "amazon_domain": cfg.amazon_domain()},
+        resp = requests.post(
+            "https://api.scavio.dev/api/v1/amazon/product",
+            headers={"Authorization": f"Bearer {key}"},
+            json={"query": "B09XS7JWHH", "domain": "com"},
             timeout=15,
         )
         if resp.status_code == 200:
-            print(json.dumps({"status": "ok", "source": "rainforest"}))
+            print(json.dumps({"status": "ok", "source": "scavio"}))
         elif resp.status_code == 401:
             print(json.dumps({"status": "error", "reason": "invalid_api_key"}))
         else:
@@ -57,7 +57,7 @@ def check():
     print(json.dumps({
         "initialized": len(missing) == 0,
         "missing": missing,
-        "has_rainforest_key": bool(conf.get("rainforest_api_key")),
+        "has_scavio_key": bool(conf.get("scavio_api_key")),
         "marketplace": conf.get("amazon_marketplace"),
     }))
 
@@ -70,13 +70,13 @@ if __name__ == "__main__":
     for k in _CONFIG_KEYS:
         p_save.add_argument(f"--{k.replace('_', '-')}", dest=k)
 
-    sub.add_parser("test-rainforest")
+    sub.add_parser("test-scavio")
     sub.add_parser("check")
 
     args = parser.parse_args()
     if args.cmd == "save":
         save(args)
-    elif args.cmd == "test-rainforest":
-        test_rainforest()
+    elif args.cmd == "test-scavio":
+        test_scavio()
     else:
         check()

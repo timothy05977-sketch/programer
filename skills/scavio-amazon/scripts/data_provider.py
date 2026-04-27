@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from shared import config as cfg
 
-import rainforest
+import scavio
 import scraper
 
 
@@ -34,17 +34,17 @@ def _snap_to_dict(snap) -> dict:
 
 
 def _fetch_one(asin: str) -> dict:
-    key = cfg.get("rainforest_api_key")
+    key = cfg.get("scavio_api_key")
     errors = []
 
     if key:
         for attempt in range(2):
             try:
-                snap = rainforest.get_product(asin)
-                return {"asin": asin, "status": "ok", "source": "rainforest",
+                snap = scavio.get_product(asin)
+                return {"asin": asin, "status": "ok", "source": "scavio",
                         "snapshot": _snap_to_dict(snap)}
             except Exception as e:
-                errors.append(f"rainforest[{attempt}]: {e}")
+                errors.append(f"scavio[{attempt}]: {e}")
                 if "429" in str(e):
                     time.sleep(60)
 
@@ -73,18 +73,43 @@ def cmd_fetch(args):
     }, default=str))
 
 
+def cmd_search(args):
+    key = cfg.get("scavio_api_key")
+    if not key:
+        print(json.dumps({"status": "failed", "errors": ["SCAVIO_API_KEY not set"]}))
+        return
+    try:
+        import requests as _req
+        resp = _req.post(
+            "https://api.scavio.dev/api/v1/amazon/search",
+            headers={"Authorization": f"Bearer {key}"},
+            json={"query": args.query,
+                  "sort_by": args.sort or None,
+                  "domain": cfg.get("amazon_marketplace", "US").lower()},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        print(json.dumps({"status": "ok", "source": "scavio",
+                          "count": len(data.get("data", [])),
+                          "items": data.get("data", []),
+                          "credits_remaining": data.get("credits_remaining")}))
+    except Exception as e:
+        print(json.dumps({"status": "failed", "errors": [str(e)]}))
+
+
 def cmd_bestsellers(args):
-    key = cfg.get("rainforest_api_key")
+    key = cfg.get("scavio_api_key")
     errors = []
     items = None
     source = None
 
     if key:
         try:
-            items = rainforest.get_bestsellers(args.category, args.top)
-            source = "rainforest"
+            items = scavio.get_bestsellers(args.category, args.top)
+            source = "scavio"
         except Exception as e:
-            errors.append(f"rainforest: {e}")
+            errors.append(f"scavio: {e}")
 
     if items is None:
         try:
@@ -109,9 +134,17 @@ if __name__ == "__main__":
     p_fetch = sub.add_parser("fetch")
     p_fetch.add_argument("--asin", action="append", required=True)
 
+    p_search = sub.add_parser("search")
+    p_search.add_argument("--query", required=True)
+    p_search.add_argument("--sort", default=None,
+                          choices=["most_recent", "price_low_to_high",
+                                   "price_high_to_low", "featured",
+                                   "average_review", "bestsellers"])
+
     p_best = sub.add_parser("bestsellers")
     p_best.add_argument("--category", default="all")
     p_best.add_argument("--top", type=int, default=20)
 
     args = parser.parse_args()
-    {"fetch": cmd_fetch, "bestsellers": cmd_bestsellers}[args.cmd](args)
+    {"fetch": cmd_fetch, "search": cmd_search,
+     "bestsellers": cmd_bestsellers}[args.cmd](args)

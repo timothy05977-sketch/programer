@@ -17,17 +17,16 @@ _DEFAULTS = {
 }
 
 _MARKETPLACE_DOMAINS = {
-    "US": "amazon.com",
-    "JP": "amazon.co.jp",
-    "UK": "amazon.co.uk",
-    "DE": "amazon.de",
-    "CA": "amazon.ca",
+    "US": "amazon.com",    "UK": "amazon.co.uk",  "DE": "amazon.de",
+    "JP": "amazon.co.jp",  "CA": "amazon.ca",     "FR": "amazon.fr",
+    "IT": "amazon.it",     "ES": "amazon.es",     "IN": "amazon.in",
+    "AU": "amazon.com.au", "BR": "amazon.com.br", "MX": "amazon.com.mx",
 }
 
 
 _ENV_OVERRIDABLE_KEYS = (
     "amazon_marketplace",
-    "rainforest_api_key",
+    "scavio_api_key",
     "feishu_doc_token",
     "feishu_bitable_token",
     "feishu_bitable_table_id_products",

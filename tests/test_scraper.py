@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 xiao
-"""L2 mock tests for skills/amz-monitor/scripts/scraper.py"""
+"""L2 mock tests for skills/scavio-amazon/scripts/scraper.py"""
 import pytest
 import responses
 

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 xiao
-"""Tests for skills/amz-monitor/scripts/analyze.py"""
+"""Tests for skills/scavio-amazon/scripts/analyze.py"""
 import json
 import subprocess
 import sys
@@ -8,7 +8,7 @@ from pathlib import Path
 
 import analyze
 
-SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "amz-monitor" / "scripts" / "analyze.py"
+SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "scavio-amazon" / "scripts" / "analyze.py"
 
 
 def _snap(rank=None, price=None, price_raw="$10.00", source="rainforest",

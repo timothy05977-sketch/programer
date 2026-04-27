@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 # Copyright (c) 2026 xiao
-"""Tests for shared/config.py and skills/amz-agent/scripts/init_config.py"""
+"""Tests for shared/config.py and skills/scavio-amazon/scripts/init_config.py"""
 import json
 import subprocess
 import sys
@@ -10,7 +10,7 @@ import pytest
 
 from shared import config as cfg
 
-INIT_SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "amz-agent" / "scripts" / "init_config.py"
+INIT_SCRIPT = Path(__file__).resolve().parent.parent / "skills" / "scavio-amazon" / "scripts" / "init_config.py"
 
 
 @pytest.fixture(autouse=True)
@@ -34,9 +34,9 @@ class TestConfigModule:
         assert cfg.load()["amazon_marketplace"] == "JP"
 
     def test_env_overrides_file(self, _tmp_cfg_file, monkeypatch):
-        _tmp_cfg_file.write_text(json.dumps({"rainforest_api_key": "from-file"}))
-        monkeypatch.setenv("RAINFOREST_API_KEY", "from-env")
-        assert cfg.get("rainforest_api_key") == "from-env"
+        _tmp_cfg_file.write_text(json.dumps({"scavio_api_key": "from-file"}))
+        monkeypatch.setenv("SCAVIO_API_KEY", "from-env")
+        assert cfg.get("scavio_api_key") == "from-env"
 
     def test_save_persists(self, _tmp_cfg_file):
         cfg.save({"feishu_doc_token": "tok-abc"})
@@ -71,7 +71,7 @@ class TestConfigModule:
         })
         assert cfg.is_initialized() is True
 
-    def test_is_initialized_false_without_rainforest_is_still_ok(self):
+    def test_is_initialized_without_scavio_key_is_still_ok(self):
         # Rainforest key is optional (scraper fallback)
         cfg.save({
             "amazon_marketplace": "US",
